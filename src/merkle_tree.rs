@@ -14,9 +14,9 @@ fn show_short_hash(hash: &String) -> String {
     format!("{}...{}", first, last)
 }
 
-fn show_tree_array(hashes: &Vec<String>) {
+fn get_tree_array(hashes: &Vec<String>) -> Vec<String> {
     let formated_hashes: Vec<String> = hashes.iter().map(|hash| show_short_hash(&hash)).collect();
-    println!("{:?}", formated_hashes);
+    formated_hashes
 }
 
 impl MerkleTree {
@@ -33,17 +33,12 @@ impl MerkleTree {
 
         loop {
             println!("*******************");
-            println!(
-                "Tree at index {}: {:?}",
-                index_tree,
-                show_tree_array(&tree[index_tree])
-            );
             let mut level = Vec::new();
             let mut index = 0;
 
             loop {
                 let mut hash: String = "".to_string();
-                if index < tree[index_tree].len() - 1 && index % 2 == 0 {
+                if index < tree[index_tree].len() - 1 {
                     let left = index;
                     let right = index + 1;
 
@@ -51,8 +46,6 @@ impl MerkleTree {
                         + tree[index_tree][right].as_str();
                     let binary = bincode::serialize(&to_hash).unwrap();
                     hash = util::to_hash(&binary);
-                    println!("Index {}", left);
-                    println!("Index {}", right);
                     println!(
                         "Index {}+{}: {} + {}: {}",
                         left,
@@ -67,22 +60,22 @@ impl MerkleTree {
                 }
 
                 level.push(hash);
-                // level.rotate_right(1);
+
                 index += 2;
 
                 if index > tree[index_tree].len() - 1 {
                     tree.push(level);
                     index_tree += 1;
+                    println!(
+                        "Tree at index {}: {:?}",
+                        index_tree,
+                        get_tree_array(&tree[index_tree])
+                    );
                     break;
                 }
             }
 
             if tree[index_tree].len() <= 1 {
-                println!(
-                    "Tree at index {}: {:?}",
-                    index_tree,
-                    show_tree_array(&tree[index_tree])
-                );
                 break;
             }
         }

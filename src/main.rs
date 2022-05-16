@@ -12,7 +12,7 @@ fn main() {
     let t4 = Transaction::new("pato".to_string(), "hety".to_string(), 6, 5);
     let t5 = Transaction::new("jonas".to_string(), "carmen".to_string(), 2, 6);
 
-    let mut transactions: Vec<Transaction> =
+    let transactions: Vec<Transaction> =
         vec![t1.clone(), t2.clone(), t3.clone(), t4.clone(), t5.clone()];
 
     let tree = merkle_tree::MerkleTree::create_tree(&transactions);
