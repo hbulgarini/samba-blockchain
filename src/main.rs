@@ -1,23 +1,71 @@
+use std::env;
+use std::time::SystemTime;
 use transaction::Transaction;
 
+use crate::db::SambaDB;
 mod block;
+mod db;
 mod merkle_tree;
 mod transaction;
 pub mod util;
 
+fn help() {
+    println!(
+        "usage:
+TO DO"
+    );
+}
+
 fn main() {
-    let t1 = Transaction::new("alice".to_string(), "bob".to_string(), 1, 1);
-    let t2 = Transaction::new("dave".to_string(), "charlie".to_string(), 10, 2);
-    let t3 = Transaction::new("bob".to_string(), "lily".to_string(), 5, 3);
-    let t4 = Transaction::new("pato".to_string(), "hety".to_string(), 6, 5);
-    let t5 = Transaction::new("jonas".to_string(), "carmen".to_string(), 2, 6);
+    let args: Vec<String> = env::args().collect();
+    let mut db = db::SambaDB::init_samba();
+    match args.len() {
+        3 => {
+            let cmd = &args[1];
 
-    let transactions: Vec<Transaction> =
-        vec![t1.clone(), t2.clone(), t3.clone(), t4.clone(), t5.clone()];
+            match &cmd[..] {
+                "add_tx" => {
+                    let values: Vec<&str> = args[2].split(";").collect();
+                    if let [from, to, amount] = &values[..] {
+                        let (txs, id) = db.open_txs();
+                        println!("txs: {:?}", txs);
 
-    let tree = merkle_tree::MerkleTree::create_tree(&transactions);
-    let root = tree.root;
-    println!("Root {:?}", root);
+                        let amount: u32 = amount.parse().expect("Invalid u32 id");
+                        let tx = Transaction::new(from.to_string(), to.to_string(), amount, id + 1);
+                        let mut transactions = txs.clone();
+                        println!("Transactions: {:?}", transactions);
+                        transactions.push(tx);
+                        let tree = merkle_tree::MerkleTree::create_tree(&transactions);
+                        let root = tree.root;
+                        let timestamp = SystemTime::now();
+
+                        println!("Root {:?}", root);
+                        if (transactions.len() >= 10) {
+                            let block =
+                                block::Block::new(root, "1".to_string(), timestamp, &transactions);
+                            println!("New block minted {:?}", block);
+                            let blocks = vec![block];
+                            db.write_to_blockchain_db(&blocks);
+                        }
+
+                        // println!("${:?}", block);
+                        db.write_to_txs_db(&transactions)
+                    } else {
+                        panic!("Invalid registry!");
+                    }
+                }
+                _ => {
+                    eprintln!("Missing arguments");
+                    help();
+                }
+            }
+        }
+
+        _ => {
+            // show a help message
+            help();
+        }
+    }
 
     /*     let t6 = Transaction::new("hector".to_string(), "carmen".to_string(), 6, 6);
 
