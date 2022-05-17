@@ -27,7 +27,7 @@ fn main() {
                 "add_tx" => {
                     let values: Vec<&str> = args[2].split(";").collect();
                     if let [from, to, amount] = &values[..] {
-                        let (txs, id) = db.open_txs();
+                        let (txs, id) = db.txs.open();
                         println!("txs: {:?}", txs);
 
                         let amount: u32 = amount.parse().expect("Invalid u32 id");
@@ -45,11 +45,11 @@ fn main() {
                                 block::Block::new(root, "1".to_string(), timestamp, &transactions);
                             println!("New block minted {:?}", block);
                             let blocks = vec![block];
-                            db.write_to_blockchain_db(&blocks);
+                            db.blockchain.write_to_db(&blocks);
                         }
 
                         // println!("${:?}", block);
-                        db.write_to_txs_db(&transactions)
+                        db.txs.write_to_db(&transactions)
                     } else {
                         panic!("Invalid registry!");
                     }
