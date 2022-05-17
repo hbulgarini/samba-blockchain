@@ -1,24 +1,24 @@
 use crate::block::Block;
 use crate::transaction::Transaction;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Seek;
 use std::{fs::File, io::Write};
 
 #[derive(Debug)]
-pub struct DBConnection {
+pub struct DBConnection<'a> {
     pub db_file: File,
     pub db_name: String,
     pub new: bool,
 }
 
 #[derive(Debug)]
-pub struct SambaDB {
-    blockchain: DBConnection,
-    txs: DBConnection,
+pub struct SambaDB<'a> {
+    blockchain: &'a DBConnection<'a>,
+    txs: &'a DBConnection<'a>,
 }
 
-impl DBConnection {
+impl<'a> DBConnection<'a> {
     fn init_db(db_name: &str) -> DBConnection {
         println!("Initing DB {}", db_name);
 
@@ -40,14 +40,7 @@ impl DBConnection {
         }
     }
 
-    /*     fn write_to_db(&mut self, encoded: &[u8]) {
-        self.db_file
-            .seek(std::io::SeekFrom::Start(0))
-            .expect("can't rewind the cursor");
-        self.db_file.write_all(encoded).unwrap();
-    } */
-
-    pub fn open<T>(&mut self) -> (Vec<T>, usize) {
+    pub fn open<T: Deserialize<'a>>(&mut self) -> (Vec<T>, usize) {
         if self.new {
             let empty: Vec<T> = Vec::new();
             return (empty, 0);
@@ -58,7 +51,7 @@ impl DBConnection {
         };
     }
 
-    pub fn write_to_db<T>(&mut self, registry: &Vec<T>) {
+    pub fn write_to_db<T: Deserialize<'a>>(&mut self, registry: &Vec<T>) {
         let encoded: Vec<u8> = bincode::serialize(&registry).unwrap();
         self.db_file
             .seek(std::io::SeekFrom::Start(0))
@@ -67,10 +60,10 @@ impl DBConnection {
     }
 }
 
-impl SambaDB {
-    pub fn init_samba() -> SambaDB {
-        let txs = DBConnection::init_db("txs.db");
-        let blockchain = DBConnection::init_db("samba.db");
+impl<'a> SambaDB<'a> {
+    pub fn init_samba() -> SambaDB<'a> {
+        let txs = &DBConnection::init_db("txs.db");
+        let blockchain = &DBConnection::init_db("samba.db");
 
         println!("{:?}", blockchain);
         println!("{:?}", txs);
