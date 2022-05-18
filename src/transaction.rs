@@ -35,8 +35,8 @@ impl Transaction {
     }
     pub fn validate_transaction(from: &String, amount: &u32, accounts: &AccountsList) -> bool {
         let account_balance = accounts.get(&from.to_string());
+        println!("from: {:?}", account_balance);
         match account_balance {
-            // The division was valid
             Some(account_balance) => account_balance > &amount,
             None => false,
         }
