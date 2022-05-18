@@ -49,7 +49,7 @@ impl DBConnection {
         }
     }
 
-    pub fn open<T: DeserializeOwned + Serialize>(&mut self) -> (Vec<T>, usize) {
+    pub fn open<T: DeserializeOwned>(&mut self) -> (Vec<T>, usize) {
         if self.new {
             let empty: Vec<T> = Vec::new();
             return (empty, 0);
@@ -60,7 +60,7 @@ impl DBConnection {
         };
     }
 
-    pub fn write_to_db<T: DeserializeOwned + Serialize>(&mut self, registry: &Vec<T>) {
+    pub fn write_to_db<T: Serialize>(&mut self, registry: T) {
         let encoded: Vec<u8> = bincode::serialize(&registry).unwrap();
         self.db_file
             .seek(std::io::SeekFrom::Start(0))

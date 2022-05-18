@@ -40,8 +40,14 @@ fn main() {
                                 Transaction::new(from.to_string(), to.to_string(), amount, id + 1);
                             let mut transactions = txs.clone();
                             println!("Transactions: {:?}", transactions);
+                            println!("Accounts DB {:?}", db.accounts_db.accounts);
                             transactions.push(tx);
                             let tree = merkle_tree::MerkleTree::create_tree(&transactions);
+                            db.accounts_db.accounts.insert(to.to_string(), amount);
+
+                            db.accounts_db
+                                .db_accounts
+                                .write_to_db(&db.accounts_db.accounts);
                             let timestamp = SystemTime::now();
 
                             println!("Root {:?}", tree.root);
