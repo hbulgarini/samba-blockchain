@@ -27,29 +27,41 @@ fn main() {
                 "add_tx" => {
                     let values: Vec<&str> = args[2].split(";").collect();
                     if let [from, to, amount] = &values[..] {
-                        let (txs, id) = db.txs.open();
-                        println!("txs: {:?}", txs);
-
                         let amount: u32 = amount.parse().expect("Invalid u32 id");
-                        let tx = Transaction::new(from.to_string(), to.to_string(), amount, id + 1);
-                        let mut transactions = txs.clone();
-                        println!("Transactions: {:?}", transactions);
-                        transactions.push(tx);
-                        let tree = merkle_tree::MerkleTree::create_tree(&transactions);
-                        let root = tree.root;
-                        let timestamp = SystemTime::now();
 
-                        println!("Root {:?}", root);
-                        if (transactions.len() >= 10) {
-                            let block =
-                                block::Block::new(root, "1".to_string(), timestamp, &transactions);
-                            println!("New block minted {:?}", block);
-                            let blocks = vec![block];
-                            db.blockchain.write_to_db(&blocks);
+                        if Transaction::validate_transaction(
+                            &from.to_string(),
+                            &amount,
+                            &db.accounts_db.accounts,
+                        ) {
+                            let (txs, id) = db.txs.open();
+
+                            let tx =
+                                Transaction::new(from.to_string(), to.to_string(), amount, id + 1);
+                            let mut transactions = txs.clone();
+                            println!("Transactions: {:?}", transactions);
+                            transactions.push(tx);
+                            let tree = merkle_tree::MerkleTree::create_tree(&transactions);
+                            let timestamp = SystemTime::now();
+
+                            println!("Root {:?}", tree.root);
+                            if transactions.len() >= 10 {
+                                let block = block::Block::new(
+                                    tree.root,
+                                    "1".to_string(),
+                                    timestamp,
+                                    &transactions,
+                                );
+                                println!("New block minted {:?}", block);
+                                let blocks = vec![block];
+                                db.blockchain.write_to_db(&blocks);
+                                db.txs.clear_db();
+                            } else {
+                                db.txs.write_to_db(&transactions);
+                            }
+                        } else {
+                            panic!("Account does not exist or does not have enough funds");
                         }
-
-                        // println!("${:?}", block);
-                        db.txs.write_to_db(&transactions)
                     } else {
                         panic!("Invalid registry!");
                     }
@@ -66,11 +78,4 @@ fn main() {
             help();
         }
     }
-
-    /*     let t6 = Transaction::new("hector".to_string(), "carmen".to_string(), 6, 6);
-
-    let mut modifiedTransaction = vec![t1, t2, t6, t4, t5];
-    let modified_tree = merkle_tree::MerkleTree::create_tree(&modifiedTransaction);
-
-    assert_eq!(root, modified_tree.root); */
 }

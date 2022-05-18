@@ -1,4 +1,4 @@
-use crate::util;
+use crate::{db::AccountsList, util};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -32,5 +32,14 @@ impl Transaction {
             hash,
             id,
         }
+    }
+    pub fn validate_transaction(from: &String, amount: &u32, accounts: &AccountsList) -> bool {
+        let account_balance = accounts.get(&from.to_string());
+        match account_balance {
+            // The division was valid
+            Some(account_balance) => account_balance > &amount,
+            None => false,
+        }
+        // The division was invalid
     }
 }
