@@ -5,6 +5,8 @@ use std::fs::OpenOptions;
 use std::io::Seek;
 use std::{fs::File, io::Write};
 
+use crate::transaction::Transaction;
+
 #[derive(Debug)]
 pub struct DBConnection {
     pub db_file: File,
@@ -78,28 +80,32 @@ impl DBConnection {
     }
 }
 
-fn read_accounts(db_accounts: &DBConnection) -> AccountsList {
-    if db_accounts.new {
-        let mut genesis: AccountsList = AccountsList::new();
-        genesis.insert("genesis".to_string(), 100000000);
-        return genesis;
-    } else {
-        let accounts: AccountsList = bincode::deserialize_from(&db_accounts.db_file).unwrap();
-        return accounts;
-    };
+impl AccountsDB {
+    fn read_accounts(db_accounts: &DBConnection) -> AccountsList {
+        if db_accounts.new {
+            let mut genesis: AccountsList = AccountsList::new();
+            genesis.insert("genesis".to_string(), 100000000);
+            return genesis;
+        } else {
+            let accounts: AccountsList = bincode::deserialize_from(&db_accounts.db_file).unwrap();
+            return accounts;
+        };
+    }
+    fn build_connection() -> Self {
+        let db_accounts = DBConnection::init_db("accounts.db");
+        let accounts = AccountsDB::read_accounts(&db_accounts);
+        AccountsDB {
+            db_accounts,
+            accounts,
+        }
+    }
 }
 
 impl SambaDB {
     pub fn init_samba() -> SambaDB {
         let txs = DBConnection::init_db("txs.db");
         let blockchain = DBConnection::init_db("samba.db");
-        let db_accounts = DBConnection::init_db("accounts.db");
-        let accounts = read_accounts(&db_accounts);
-
-        let accounts_db = AccountsDB {
-            db_accounts,
-            accounts,
-        };
+        let accounts_db = AccountsDB::build_connection();
 
         SambaDB {
             blockchain,
